@@ -74,3 +74,14 @@ export interface Photo {
   export interface ApiResponse {
     user: User;
   }
+
+  export interface Repository {
+    id: string;
+    name: string;
+    languages_url:string;
+    // Add other properties if needed
+  }
+  
+  export interface RepoLanguages {
+    [key: string]: number; 
+  }
