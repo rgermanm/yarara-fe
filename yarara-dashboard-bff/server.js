@@ -5,6 +5,7 @@ const passport = require("passport");
 const GitHubStrategy = require("passport-github2").Strategy;
 const axios = require("axios");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -20,6 +21,12 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+
+// MongoDB connection
+mongoose
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("Failed to connect to MongoDB", err));
 
 // GitHub OAuth Setup
 passport.use(
@@ -40,6 +47,13 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 // Routes
+const projectRoutes = require("./routes/projectRoutes");
+const scanRoutes = require("./routes/scanRoutes");
+
+app.use("/api", projectRoutes);
+app.use("/api", scanRoutes);
+
+// GitHub Auth Routes
 app.get(
   "/auth/github",
   passport.authenticate("github", { scope: ["repo", "read:user"] })

@@ -85,3 +85,18 @@ export interface Photo {
   export interface RepoLanguages {
     [key: string]: number; 
   }
+
+  export interface Project{
+    _id:String,
+    name: String
+    repoId: String,
+    userId: String,
+    scans: [Scan] // Array of Scan IDs
+    repoName:String
+  }
+
+  export interface Scan{
+    output: string,
+    scanDate: Date, // Date of the scan
+    vulnerabilitiesCount: number, // Number of vulnerabilities
+  }
