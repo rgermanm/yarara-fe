@@ -11,6 +11,9 @@ import * as Dialog from "@radix-ui/react-dialog"; // Use Radix UI Dialog for con
 import * as Select from "@radix-ui/react-select"; // Use Radix UI Select for consistency
 
 import githubLogo from "./../../../public/githubLogo.png";
+import headStateless from "./../../../public/logoVariants/headStateless.svg";
+import mainLogo from "./../../../public/logoVariants/fullWhite.svg";
+
 import { ApiResponse, User, Repository, RepoLanguages, Project } from "@/types/interfaces";
 import Image from "next/image";
 import { PacmanLoader as Loader } from "react-spinners";
@@ -37,6 +40,7 @@ export default function Dashboard() {
   const [repoLanguagesList, setRepoLanguagesList] = useState<RepoLanguages>({});
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project>();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
 
   // Effect for refetching the selected project
@@ -238,34 +242,46 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen w-full bg-gray-900 text-gray-200">
-      <aside className="w-64 bg-gray-800 p-4 border-r border-gray-700">
-        <h2 className="text-xl font-bold mb-6">Projects</h2>
-        <Button
-          onClick={handleAddProject}
-          className="cursor-pointer mb-5 w-full bg-gray-700 hover:bg-gray-600 text-gray-100 transition-all duration-200"
+      <div className="flex">
+        {/* Collapse/Expand Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="p-2 bg-gray-800 text-gray-100 hover:bg-gray-700 transition-all duration-200"
         >
-          Add Project
-        </Button>
-        <ul className="space-y-2">
-          {userProjects.map((project, index) => (
-            <li
-              key={index}
-              onClick={() => setSelectedProject(project)}
-              style={{ background: selectedProject?._id === project._id ? "#00b40044" : "" }}
-              className="flex items-center p-2 gap-2 hover:bg-gray-700 cursor-pointer rounded-md transition-colors duration-200"
-            >
-              <Folder size={16} className="text-gray-300" />
-              <span>{project.name}</span>
-            </li>
-          ))}
-        </ul>
-      </aside>
+          {isCollapsed ? ">" : "<"}
+        </button>
+
+        <aside
+          className={`bg-gray-800 border-r border-gray-700 transition-all duration-200 ${isCollapsed ? "w-0 overflow-hidden" : "w-64 p-4"
+            }`}
+        >
+          <h2 className="text-xl font-bold mb-6">Projects</h2>
+          <Button
+            onClick={handleAddProject}
+            className="cursor-pointer mb-5 w-full bg-gray-700 hover:bg-gray-600 text-gray-100 transition-all duration-200"
+          >
+            Add Project
+          </Button>
+          <ul className="space-y-2">
+            {userProjects.map((project, index) => (
+              <li
+                key={index}
+                onClick={() => setSelectedProject(project)}
+                style={{ background: selectedProject?._id === project._id ? "#00b40044" : "" }}
+                className="flex items-center p-2 gap-2 hover:bg-gray-700 cursor-pointer rounded-md transition-colors duration-200"
+              >
+                <Folder size={16} className="text-gray-300" />
+                <span>{project.name}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      </div>
 
       <div className="flex-1 flex flex-col ">
         <header className="flex justify-between items-center bg-gray-800 shadow-lg p-4">
           <div className="flex items-center gap-2">
-            <UserIcon size={24} className="text-gray-200" />
-            <span className="text-lg font-bold">Dashboard</span>
+            <Image src={mainLogo.src} alt="main-logo" height={200} width={120}></Image>
           </div>
           <div>
             {logedUser ? (
@@ -298,21 +314,32 @@ export default function Dashboard() {
           {selectedProject && <div className="mb-4 font-bold">Repository: {selectedProject.repoName}</div>}
 
           <div className="flex justify-between mb-6 ">
-            <Input
+            {/* <Input
               placeholder="Search scans..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-1/3 bg-gray-700 border-gray-600 focus:ring-gray-500 rounded-md transition-all duration-200"
-            />
-            <Button
+            /> */}
+            <div></div>
+            {selectedProject && <Button
               onClick={handleAddScan}
               className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-gray-100 transition-all duration-200"
             >
-              Add Scan
-            </Button>
+              Add New Scan
+            </Button>}
           </div>
 
-          <Card className="p-4 bg-gray-800 rounded-lg shadow-sm">
+          {!selectedProject &&
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              flexDirection: 'column', justifyItems: 'center',
+              height: "60vh", justifyContent: 'center', width: "100%", gap: 20
+            }}>
+              <Image height={150} width={150} alt="stateless-logo" src={headStateless}></Image>
+              <h5 style={{ fontWeight: "bold", fontSize: 25, color: "#37465c" }}>Create a new project or select an existing one</h5>
+            </div>
+          }
+          {selectedProject && <Card className="p-4 bg-gray-800 rounded-lg shadow-sm">
             <table className="w-full border-collapse bg-gray-800">
               <thead className="bg-gray-800">
                 <tr className="bg-gray-700">
@@ -347,7 +374,8 @@ export default function Dashboard() {
                 ))}
               </tbody>
             </table>
-          </Card>
+
+          </Card>}
         </main>
       </div>
 
@@ -355,7 +383,7 @@ export default function Dashboard() {
         <Dialog.Trigger asChild>
         </Dialog.Trigger>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50"  /> {/* Overlay for modal */}
+          <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" /> {/* Overlay for modal */}
           <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
             <Dialog.Title className="text-xl font-bold mb-4">Create New Project</Dialog.Title>
             <Dialog.Description className="mb-4">
@@ -363,7 +391,7 @@ export default function Dashboard() {
             </Dialog.Description>
             <div className="space-y-4">
               <Select.Root value={selectedRepo} onValueChange={setSelectedRepo}>
-                <Select.Trigger  className="w-full p-2 bg-gray-700 rounded-md">
+                <Select.Trigger className="w-full p-2 bg-gray-700 rounded-md">
                   <Select.Value placeholder="Select a repository">
                     {repoList.find((repo) => repo.id == selectedRepo)?.name || "Select a repository"}
                   </Select.Value>
