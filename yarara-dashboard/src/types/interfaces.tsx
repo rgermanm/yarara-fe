@@ -80,6 +80,7 @@ export interface Photo {
     name: string;
     languages_url:string;
     repoId:string;
+    url:string
     // Add other properties if needed
   }
   

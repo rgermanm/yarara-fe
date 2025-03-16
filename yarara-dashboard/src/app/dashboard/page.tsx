@@ -39,170 +39,184 @@ export default function Dashboard() {
   const [selectedProject, setSelectedProject] = useState<Project>();
 
 
+  // Effect for refetching the selected project
   useEffect(() => {
     if (!selectedProject?._id) return; // Ensure there's a selected project
 
-    const interval = setInterval(() => {
-      fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser?.id}`)
-        .then((res) => res.json())
-        .then((data: [Project]) => {
-
-          setSelectedProject(data.find(p => p._id == selectedProject._id)); // Update project if scans are pending
-
-        })
-        .catch((error) => console.error("Error refetching project:", error));
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser?.id}`);
+        const data = await response.json();
+        setSelectedProject(data.find((p:any) => p._id == selectedProject._id)); // Update project if scans are pending
+      } catch (error) {
+        console.error("Error refetching project:", error);
+      }
     }, 10000);
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, [selectedProject?._id]); // Runs when selectedProject changes
 
+  // Effect for fetching the logged-in user
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/user`, { credentials: "include" })
-      .then(res => res.json())
-      .then((data: ApiResponse) => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/user`, { credentials: "include" });
+        const data = await response.json();
         setLogedUser(data.user); // Set the logged-in user
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching user data:", error);
-      });
+      }
+    };
 
+    fetchUser();
   }, []);
 
-
-
+  // Effect for fetching repositories and projects
   useEffect(() => {
-    if (logedUser?.id) {
-      let listRepository: any[] = [];
-      fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/repos`, { credentials: "include" })
-        .then(res => res.json())
-        .then((data) => {
-          listRepository = data;
-          setRepoList(data);
-          fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser.id}`)
-            .then((response) => response.json())
-            .then((data) => {
-              const userProjectRepoName = data.map((r: Repository) => ({
-                ...r,
-                repoName: listRepository.find(rLe => rLe.id == r.repoId)?.name,
-                repoUrl: "https://" + logedUser.accessToken + listRepository.find(rLe => rLe.id == r.repoId)?.url.replace("https://api.github.com/repos", "@github.com")
-              }))
-              setUserProjects(userProjectRepoName);
-            })
-            .catch((error) => {
-              console.error("Error fetching projects:", error);
-            })
-        })
-        .catch((error) => {
-          console.error("Error fetching user data:", error);
-        })
-    }
+    const fetchReposAndProjects = async () => {
+      if (logedUser?.id) {
+        try {
+          const reposResponse = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/repos`, { credentials: "include" });
+          const reposData = await reposResponse.json();
+          setRepoList(reposData);
+          console.log(reposData);
+          const projectsResponse = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser.id}`);
+          const projectsData = await projectsResponse.json();
 
+          const userProjectRepoName = projectsData.map((r:any) => (
+            {
+            ...r,
+            repoName: reposData.find((rLe:any) => rLe.id == r.repoId).name,
+            repoUrl: "https://" + logedUser.accessToken + reposData.find((rLe:any) => rLe.id == r.repoId)?.url.replace("https://api.github.com/repos", "@github.com"),
+          }));
+
+          console.log("REPOS USER")
+          console.log(userProjectRepoName);
+          setUserProjects(userProjectRepoName);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      }
+    };
+
+    fetchReposAndProjects();
   }, [logedUser]);
 
-
-
-  const handleAddScan = () => {
-    fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/scans`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        projectId: selectedProject?._id,
-        repoUrl: selectedProject?.repoUrl
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setSelectedProject(data);
-      })
-      .catch((error) => {
-        console.error("Error creating project:", error);
+  // Function to handle adding a scan
+  const handleAddScan = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/scans`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: selectedProject?._id,
+          repoUrl: selectedProject?.repoUrl,
+        }),
       });
-  }
+      const data = await response.json();
+      setSelectedProject(data);
+    } catch (error) {
+      console.error("Error creating project:", error);
+    }
+  };
 
+  // Function to handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/auth/logout`, { credentials: "include" });
+      console.log(response);
+      setLogedUser(null); // Set the logged-in user
+      window.location.href="/?F"
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
 
-  const handleLogout = () => {
-    fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/auth/logout`, { credentials: "include" })
-      .then((data) => {
-        console.log(data);
-        setLogedUser(null); // Set the logged-in user
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
-      });
-  }
-
-  const handleAddProject = () => {
+  // Function to handle adding a project
+  const handleAddProject = async () => {
     setLoadingRepos(true);
-    fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/repos`, { credentials: "include" })
-      .then(res => res.json())
-      .then((data) => {
-        setRepoList(data); // Set the logged-in user
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
-      }).finally(() => {
-        setLoadingRepos(false);
-      });
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/repos`, { credentials: "include" });
+      const data = await response.json();
+      setRepoList(data); // Set the logged-in user
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoadingRepos(false);
+    }
     setOpenProjectDialog(true);
-  }
+  };
 
-  const handleCreateProject = () => {
+  // Function to handle creating a project
+  const handleCreateProject = async () => {
     if (!selectedRepo || !projectName) {
       alert("Please select a repository and provide a project name.");
       return;
     }
-    // Send a request to create the project
-    fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: projectName,
-        repoId: selectedRepo,
-        scans: [], // Empty list of scans
-        userId: logedUser?.id
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Project created:", data);
-        setOpenProjectDialog(false); // Close the dialog
-        setSelectedRepo(""); // Reset selected repo
-        setProjectName(""); // Reset project name
-        })
-      .catch((error) => {
-        console.error("Error creating project:", error);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: projectName,
+          repoId: selectedRepo,
+          scans: [], // Empty list of scans
+          userId: logedUser?.id,
+        }),
       });
+      const data = await response.json();
+      console.log("Project created:", data);
+      setOpenProjectDialog(false); // Close the dialog
+      setSelectedRepo(""); // Reset selected repo
+      setProjectName(""); // Reset project name
+
+      const projectsResponse = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser?.id}`);
+      const projectsData = await projectsResponse.json();
+
+      const userProjectRepoName = projectsData.map((r:any) => ({
+        ...r,
+        repoName: repoList.find((rLe:any) => rLe.id == r.repoId)?.name,
+        repoUrl: "https://" + logedUser?.accessToken + repoList.find((rLe:any) => rLe.id == r.repoId)?.url.replace("https://api.github.com/repos", "@github.com"),
+      }));
+
+      setUserProjects(userProjectRepoName);
+    } catch (error) {
+      console.error("Error creating project:", error);
+    }
   };
 
-
+  // Effect for fetching repository languages
   useEffect(() => {
-    if (selectedRepo != "") {
-      const repo = repoList.find((r) => r.id == selectedRepo);
-      if (repo) {
-        console.log(repo.languages_url);
-        fetch(repo.languages_url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${logedUser?.accessToken}`
-          }
-        }).then((res) => res.json())
-          .then((data) => {
+    const fetchRepoLanguages = async () => {
+      if (selectedRepo !== "") {
+        const repo = repoList.find((r) => r.id == selectedRepo);
+        if (repo) {
+          try {
+            const response = await fetch(repo.languages_url, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${logedUser?.accessToken}`,
+              },
+            });
+            const data = await response.json();
             setRepoLanguagesList(data);
-          }).catch((e) => {
-            console.log(e);
-          })
-
+          } catch (error) {
+            console.log(error);
+          }
+        }
       }
-    }
+    };
 
-  }, [selectedRepo])
+    fetchRepoLanguages();
+  }, [selectedRepo]);
 
 
   const getScanColor = (status: string) => {
@@ -324,7 +338,7 @@ export default function Dashboard() {
                     <td className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{scan.vulnerabilitiesCount ? scan.vulnerabilitiesCount : 0}</td>
                     <td style={{ color: getScanColor(scan.status) }} className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100 ">
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                        {scan.status + " "}
+                        {scan.status=="Pending"?"Scanning ":scan.status}
                         {scan.status == "Pending" && <Loader color="yellow" size={10} />}
                         {scan.status == "Completed" && <Check color="green" size={20} />}
                         {scan.status == "Error" && <X color="red" size={20} />}
@@ -361,7 +375,7 @@ export default function Dashboard() {
               <Select.Root value={selectedRepo} onValueChange={setSelectedRepo}>
                 <Select.Trigger className="w-full p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
                   <Select.Value placeholder="Select a repository">
-                    {repoList.find((repo) => repo.id === selectedRepo)?.name || "Select a repository"}
+                    {repoList.find((repo) => repo.id == selectedRepo)?.name || "Select a repository"}
                   </Select.Value>
 
 
@@ -399,7 +413,7 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-              {selectedRepo && !languagesWithPercentages.some(({ language }) => language === "Clarity") && (
+              {selectedRepo && !languagesWithPercentages.some(({ language }) => language == "Clarity") && (
                 <Dialog.Description style={{ color: 'yellow', display: "flex", flexDirection: 'row', gap: 10 }}>
                   <CircleAlert />
                   Warning: Clarity language is missing!
@@ -409,8 +423,8 @@ export default function Dashboard() {
             </div>
             <Dialog.Close asChild>
               <Button onClick={() => handleCreateProject()}
-                disabled={!languagesWithPercentages.some(({ language }) => language === "Clarity")}
-                className={(projectName!=""&&!languagesWithPercentages.some(({ language }) => language === "Clarity")) ?
+                disabled={!languagesWithPercentages.some(({ language }) => language == "Clarity")}
+                className={(projectName!=""&&!languagesWithPercentages.some(({ language }) => language == "Clarity")) ?
                   "cursor-not-allowed mb-5 w-full bg-gray-500 text-gray-300 transition-all duration-200 mt-4 disabled:bg-gray-400 disabled:text-gray-200 disabled:opacity-50 disabled:hover:bg-gray-400" :
                   "cursor-pointer mb-5 w-full bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-100 transition-all duration-200 mt-4"
                 }>
