@@ -53,24 +53,30 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-
     if (logedUser?.id) {
-      console.log(logedUser)
-      fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser.id}`)
-        .then((response) => response.json())
+      let listRepository: any[] = [];
+      fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/repos`, { credentials: "include" })
+        .then(res => res.json())
         .then((data) => {
-          const userProjectRepoName = data.map((r:Repository) => {
-            return {
-              ...r,
-              repoName: repoList.find(rLe=>rLe.id==r.id)?.name
-            }
-          })
-          setUserProjects(userProjectRepoName);
+          listRepository = data;
+          setRepoList(data);
+          fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser.id}`)
+            .then((response) => response.json())
+            .then((data) => {
+              const userProjectRepoName = data.map((r: Repository) => ({
+                ...r,
+                repoName: listRepository.find(rLe => rLe.id == r.repoId)?.name,
+                repoUrl:"https://"+logedUser.accessToken+listRepository.find(rLe => rLe.id == r.repoId)?.url.replace("https://api.github.com/repos","@github.com")
+              }))
+              setUserProjects(userProjectRepoName);
+            })
+            .catch((error) => {
+              console.error("Error fetching projects:", error);
+            })
         })
         .catch((error) => {
-          console.error("Error fetching projects:", error);
-        });
-
+          console.error("Error fetching user data:", error);
+        })
     }
 
   }, [logedUser]);
@@ -78,7 +84,24 @@ export default function Dashboard() {
 
 
   const handleAddScan = () => {
-
+    fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/scans`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        projectId: selectedProject?._id,
+        repoUrl:selectedProject?.repoUrl
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setSelectedProject(data);
+      })
+      .catch((error) => {
+        console.error("Error creating project:", error);
+      });
   }
 
 
@@ -106,7 +129,6 @@ export default function Dashboard() {
         setLoadingRepos(false);
       });
     setOpenProjectDialog(true);
-
   }
 
   const handleCreateProject = () => {
@@ -165,6 +187,14 @@ export default function Dashboard() {
 
   }, [selectedRepo])
 
+
+  const getScanColor=(status:string)=>{
+    if(status=="Pending")return "yellow"
+    if(status=="Completed") return "green"
+    if(status=="Error") return "red"
+    else return "white"
+  }
+
   const totalBytes = Object.values(repoLanguagesList).reduce((sum: number, bytes: number) => sum + bytes, 0);
 
   const languagesWithPercentages = Object.entries(repoLanguagesList).map(([language, bytes]: [string, number]) => ({
@@ -175,7 +205,6 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
       <div style={{ maxWidth: "100vw" }}>
-
       </div>
       <aside className="w-64 bg-gradient-to-b from-gray-800 to-gray-900 text-white p-4 border-r border-gray-700">
         <h2 className="text-xl font-bold mb-6 text-gray-100">Projects</h2>
@@ -187,7 +216,7 @@ export default function Dashboard() {
             <li
               key={index}
               onClick={() => setSelectedProject(project)}
-              style={{background:selectedProject?._id==project._id?"#00b40044":""}}
+              style={{ background: selectedProject?._id == project._id ? "#00b40044" : "" }}
               className="flex items-center p-2 gap-2 hover:bg-gray-700 cursor-pointer rounded-md transition-colors duration-200"
             >
               <Folder size={16} className="text-gray-300" />
@@ -238,6 +267,10 @@ export default function Dashboard() {
 
         {/* Table section */}
         <main className="p-6">
+         {selectedProject&& <div style={{ marginTop: 20, marginBottom: 20,fontWeight:"bold" }}>
+            Repository: {selectedProject?.repoName}
+          </div>}
+   
           <div className="flex justify-between mb-6">
             <Input
               placeholder="Search scans..."
@@ -245,7 +278,7 @@ export default function Dashboard() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-1/3 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 rounded-md transition-all duration-200"
             />
-            <Button onClick={() => { handleAddScan() }} className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-100 transition-all duration-200">
+            <Button onClick={() => { handleAddScan() }} className="cursor-pointer bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-100 transition-all duration-200">
               Add Scan
             </Button>
           </div>
@@ -257,6 +290,8 @@ export default function Dashboard() {
                   <th className="p-3 text-left text-gray-700 dark:text-gray-200">Repository</th>
                   <th className="p-3 text-left text-gray-700 dark:text-gray-200">Scan Date</th>
                   <th className="p-3 text-left text-gray-700 dark:text-gray-200">Vulnerabilities</th>
+                  <th className="p-3 text-left text-gray-700 dark:text-gray-200">Status</th>
+
                   <th className="p-3 text-left text-gray-700 dark:text-gray-200">Actions</th>
                 </tr>
               </thead>
@@ -269,7 +304,11 @@ export default function Dashboard() {
                     <td className="p-3 text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{index}</td>
                     <td className="p-3 text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{selectedProject.repoName}</td>
                     <td className="p-3 text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{new Date(scan.scanDate).toLocaleString("es")}</td>
-                    <td className="p-3 text-center text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{scan.vulnerabilitiesCount}</td>
+                    <td className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{scan.vulnerabilitiesCount?scan.vulnerabilitiesCount:0}</td>
+                    <td style={{color:getScanColor(scan.status)}} className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">
+                      
+                      {scan.status}</td>
+
                     <td className="p-3 flex gap-2 justify-center">
                       <Eye size={16} className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-200" />
                       <Trash2 size={16} className="cursor-pointer text-red-500 hover:text-red-600 transition-colors duration-200" />
@@ -355,7 +394,7 @@ export default function Dashboard() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      
+
     </div>
   );
 }
