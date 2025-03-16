@@ -80,6 +80,7 @@ export interface Photo {
     name: string;
     languages_url:string;
     repoId:string;
+    url:string
     // Add other properties if needed
   }
   
@@ -99,6 +100,7 @@ export interface Photo {
   }
 
   export interface Scan{
+    _id:string,
     output: string,
     scanDate: Date, // Date of the scan
     vulnerabilitiesCount: number, // Number of vulnerabilities
