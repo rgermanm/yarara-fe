@@ -295,8 +295,8 @@ export default function Dashboard() {
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-gray-800 border border-gray-700 rounded-md shadow-lg">
-                  <DropdownMenuItem className="p-2 hover:bg-gray-700">Profile</DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="p-2 hover:bg-gray-700">Logout</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer p-2 hover:bg-gray-700">Profile</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer  p-2 hover:bg-gray-700">Logout</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
