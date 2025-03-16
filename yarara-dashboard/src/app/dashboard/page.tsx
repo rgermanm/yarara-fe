@@ -367,8 +367,9 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="p-3 flex gap-2">
-                      <Link href={`/scan/${scan._id}`}>{index}</Link>
-                      {scan.status === "Completed" && <Eye size={20} className="cursor-pointer text-gray-400 hover:text-gray-200 transition-colors duration-200" />}
+                      <Link href={`/scan/${scan._id}`}>
+                        {scan.status === "Completed" && <Eye size={20} className="cursor-pointer text-gray-400 hover:text-gray-200 transition-colors duration-200" />}
+                      </Link>
                     </td>
                   </tr>
                 ))}
