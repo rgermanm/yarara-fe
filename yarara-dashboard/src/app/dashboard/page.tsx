@@ -58,7 +58,7 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Error refetching project:", error);
       }
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, [selectedProject?._id]); // Runs when selectedProject changes
