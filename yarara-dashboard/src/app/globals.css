@@ -37,3 +37,7 @@ body {
   background-color: #111 !important; /* Ensures background stays dark */
   color: #fff !important; /* Forces text to remain white */
 }
+
+.bg-white{
+  background-color:  #1e2939 !important;;
+}
