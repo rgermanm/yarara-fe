@@ -255,13 +255,13 @@ export default function Dashboard() {
           className={`bg-gray-800 border-r border-gray-700 transition-all duration-200 ${isCollapsed ? "w-0 overflow-hidden" : "w-64 p-4"
             }`}
         >
-          <h2 className="text-xl font-bold mb-6">Projects</h2>
-          <Button
+          {logedUser && <h2 className="text-xl font-bold mb-6">Projects</h2>}
+          {logedUser && <Button
             onClick={handleAddProject}
             className="cursor-pointer mb-5 w-full bg-gray-700 hover:bg-gray-600 text-gray-100 transition-all duration-200"
           >
             Add Project
-          </Button>
+          </Button>}
           <ul className="space-y-2">
             {userProjects.map((project, index) => (
               <li
