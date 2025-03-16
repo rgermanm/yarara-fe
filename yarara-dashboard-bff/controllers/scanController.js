@@ -4,9 +4,8 @@ const { createScan } = require("../services/scanService");
 const createScanHandler = async (req, res) => {
   const { repoUrl, projectId } = req.body;
   try {
-    console.log("LLEGO LA URL")
-    console.log(repoUrl);
-    const scan = await createScan(projectId);
+ 
+    const scan = await createScan(projectId,repoUrl);
     res.status(201).json(scan);
   } catch (error) {
     res.status(400).json({ error: error.message });

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuContent } from "@radix-ui/react-dropdown-menu";
-import { LogIn, Eye, Trash2, Folder, User as UserIcon, FileWarning, CircleAlert } from "lucide-react";
+import { LogIn, Eye, Trash2, Folder, User as UserIcon, FileWarning, CircleAlert, Cross, X, Check } from "lucide-react";
 
 import * as Dialog from "@radix-ui/react-dialog"; // Use Radix UI Dialog for consistency
 import * as Select from "@radix-ui/react-select"; // Use Radix UI Select for consistency
@@ -13,6 +13,7 @@ import * as Select from "@radix-ui/react-select"; // Use Radix UI Select for con
 import githubLogo from "./../../../public/githubLogo.png";
 import { ApiResponse, User, Repository, RepoLanguages, Project } from "@/types/interfaces";
 import Image from "next/image";
+import { PacmanLoader as Loader } from "react-spinners";
 
 const isLoggedIn = false; // Simulate authentication state
 const projects = ["Project A", "Project B", "Project C"];
@@ -37,6 +38,22 @@ export default function Dashboard() {
   const [selectedProject, setSelectedProject] = useState<Project>();
 
 
+  useEffect(() => {
+    if (!selectedProject?._id) return; // Ensure there's a selected project
+
+    const interval = setInterval(() => {
+      fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser?.id}`)
+        .then((res) => res.json())
+        .then((data: [Project]) => {
+
+          setSelectedProject(data.find(p => p._id == selectedProject._id)); // Update project if scans are pending
+
+        })
+        .catch((error) => console.error("Error refetching project:", error));
+    }, 10000);
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [selectedProject?._id]); // Runs when selectedProject changes
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/user`, { credentials: "include" })
@@ -66,7 +83,7 @@ export default function Dashboard() {
               const userProjectRepoName = data.map((r: Repository) => ({
                 ...r,
                 repoName: listRepository.find(rLe => rLe.id == r.repoId)?.name,
-                repoUrl:"https://"+logedUser.accessToken+listRepository.find(rLe => rLe.id == r.repoId)?.url.replace("https://api.github.com/repos","@github.com")
+                repoUrl: "https://" + logedUser.accessToken + listRepository.find(rLe => rLe.id == r.repoId)?.url.replace("https://api.github.com/repos", "@github.com")
               }))
               setUserProjects(userProjectRepoName);
             })
@@ -92,7 +109,7 @@ export default function Dashboard() {
       },
       body: JSON.stringify({
         projectId: selectedProject?._id,
-        repoUrl:selectedProject?.repoUrl
+        repoUrl: selectedProject?.repoUrl
       }),
     })
       .then((res) => res.json())
@@ -188,10 +205,10 @@ export default function Dashboard() {
   }, [selectedRepo])
 
 
-  const getScanColor=(status:string)=>{
-    if(status=="Pending")return "yellow"
-    if(status=="Completed") return "green"
-    if(status=="Error") return "red"
+  const getScanColor = (status: string) => {
+    if (status == "Pending") return "yellow"
+    if (status == "Completed") return "green"
+    if (status == "Error") return "red"
     else return "white"
   }
 
@@ -267,10 +284,10 @@ export default function Dashboard() {
 
         {/* Table section */}
         <main className="p-6">
-         {selectedProject&& <div style={{ marginTop: 20, marginBottom: 20,fontWeight:"bold" }}>
+          {selectedProject && <div style={{ marginTop: 20, marginBottom: 20, fontWeight: "bold" }}>
             Repository: {selectedProject?.repoName}
           </div>}
-   
+
           <div className="flex justify-between mb-6">
             <Input
               placeholder="Search scans..."
@@ -304,14 +321,22 @@ export default function Dashboard() {
                     <td className="p-3 text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{index}</td>
                     <td className="p-3 text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{selectedProject.repoName}</td>
                     <td className="p-3 text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{new Date(scan.scanDate).toLocaleString("es")}</td>
-                    <td className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{scan.vulnerabilitiesCount?scan.vulnerabilitiesCount:0}</td>
-                    <td style={{color:getScanColor(scan.status)}} className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">
-                      
-                      {scan.status}</td>
+                    <td className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100">{scan.vulnerabilitiesCount ? scan.vulnerabilitiesCount : 0}</td>
+                    <td style={{ color: getScanColor(scan.status) }} className="p-3 text-left text-gray-700 dark:text-gray-200 hover:text-gray-800 dark:hover:text-gray-100 ">
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        {scan.status + " "}
+                        {scan.status == "Pending" && <Loader color="yellow" size={10} />}
+                        {scan.status == "Completed" && <Check color="green" size={20} />}
+                        {scan.status == "Error" && <X color="red" size={20} />}
+
+                      </div>
+                    </td>
 
                     <td className="p-3 flex gap-2 justify-center">
-                      <Eye size={16} className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-200" />
-                      <Trash2 size={16} className="cursor-pointer text-red-500 hover:text-red-600 transition-colors duration-200" />
+                      {scan.status=="Completed"&&<Eye size={20} className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-200" />
+                     }
+                     {//  <Trash2 size={16} className="cursor-pointer text-red-500 hover:text-red-600 transition-colors duration-200" />
+                      }
                     </td>
                   </tr>
                 ))}
