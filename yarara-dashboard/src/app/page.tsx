@@ -20,7 +20,7 @@ const LoginPage = () => {
       {/* Login Button */}
       <Button
         onClick={() => (window.location.href = "http://localhost:5000/auth/github")}
-        className="flex gap-2 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-100 transition-all duration-200"
+        className="cursor-pointer flex gap-2 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-100 transition-all duration-200"
       >
         <LogIn size={16} /> Login with GitHub
       </Button>

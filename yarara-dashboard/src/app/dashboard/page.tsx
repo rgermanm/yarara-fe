@@ -47,7 +47,9 @@ export default function Dashboard() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/api/projects/${logedUser?.id}`);
         const data = await response.json();
-        setSelectedProject(data.find((p:any) => p._id == selectedProject._id)); // Update project if scans are pending
+        setSelectedProject({...selectedProject,
+          scans:data.find((p:any) => p._id == selectedProject._id).scans
+        }); // Update project if scans are pending
       } catch (error) {
         console.error("Error refetching project:", error);
       }
@@ -129,7 +131,7 @@ export default function Dashboard() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BFF_URL}/auth/logout`, { credentials: "include" });
       console.log(response);
       setLogedUser(null); // Set the logged-in user
-      window.location.href="/?F"
+      window.location.href="/"
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
