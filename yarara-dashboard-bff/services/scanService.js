@@ -5,6 +5,12 @@ const path = require("path");
 const fs = require("fs");
 
 // Create a new scan and associate it with a project
+
+
+const findScanById = async (scanId) => {
+  return await Scan.findById(scanId);
+};
+
 const createScan = async (projectId, repoUrl) => {
   // Create the scan
   const scan = new Scan({ projectId });
@@ -54,4 +60,4 @@ const createScan = async (projectId, repoUrl) => {
   return updatedProject;
 };
 
-module.exports = { createScan };
+module.exports = { createScan, findScanById };

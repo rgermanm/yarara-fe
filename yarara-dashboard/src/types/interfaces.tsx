@@ -99,6 +99,7 @@ export interface Photo {
   }
 
   export interface Scan{
+    _id:string,
     output: string,
     scanDate: Date, // Date of the scan
     vulnerabilitiesCount: number, // Number of vulnerabilities

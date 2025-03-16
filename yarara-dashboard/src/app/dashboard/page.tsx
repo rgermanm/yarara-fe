@@ -14,6 +14,7 @@ import githubLogo from "./../../../public/githubLogo.png";
 import { ApiResponse, User, Repository, RepoLanguages, Project } from "@/types/interfaces";
 import Image from "next/image";
 import { PacmanLoader as Loader } from "react-spinners";
+import Link from "next/link";
 
 const isLoggedIn = false; // Simulate authentication state
 const projects = ["Project A", "Project B", "Project C"];
@@ -332,6 +333,8 @@ export default function Dashboard() {
                     </td>
 
                     <td className="p-3 flex gap-2 justify-center">
+                    <Link href={`/scan/${scan._id}`}>{index}</Link>
+
                       {scan.status=="Completed"&&<Eye size={20} className="cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-200" />
                      }
                      {//  <Trash2 size={16} className="cursor-pointer text-red-500 hover:text-red-600 transition-colors duration-200" />
