@@ -173,8 +173,7 @@ export default function Dashboard() {
         setOpenProjectDialog(false); // Close the dialog
         setSelectedRepo(""); // Reset selected repo
         setProjectName(""); // Reset project name
-        // Optionally, refresh the projects list
-      })
+        })
       .catch((error) => {
         console.error("Error creating project:", error);
       });
@@ -408,7 +407,7 @@ export default function Dashboard() {
             <Dialog.Close asChild>
               <Button onClick={() => handleCreateProject()}
                 disabled={!languagesWithPercentages.some(({ language }) => language === "Clarity")}
-                className={true ?
+                className={(projectName!=""&&!languagesWithPercentages.some(({ language }) => language === "Clarity")) ?
                   "cursor-not-allowed mb-5 w-full bg-gray-500 text-gray-300 transition-all duration-200 mt-4 disabled:bg-gray-400 disabled:text-gray-200 disabled:opacity-50 disabled:hover:bg-gray-400" :
                   "cursor-pointer mb-5 w-full bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-100 transition-all duration-200 mt-4"
                 }>
